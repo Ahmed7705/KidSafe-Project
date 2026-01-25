@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "KidSafe",
+  "version": "1.0.0",
+  "description": "KidSafe browser companion for content filtering and activity logging.",
+  "permissions": [
+    "storage",
+    "alarms",
+    "webRequest",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_title": "KidSafe"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked.html", "blocked.css", "blocked.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

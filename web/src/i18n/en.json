@@ -1,0 +1,181 @@
+{
+  "app": {
+    "title": "KidSafe",
+    "tagline": "A child-friendly internet protection tool"
+  },
+  "nav": {
+    "overview": "Overview",
+    "profile": "Profile",
+    "children": "Children",
+    "categories": "Categories",
+    "blocklist": "Blocklist",
+    "logs": "Activity Logs",
+    "alerts": "Alerts",
+    "extension": "Extension"
+  },
+  "auth": {
+    "login": "Sign in",
+    "register": "Create account",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full name",
+    "signIn": "Sign in",
+    "createAccount": "Create account",
+    "switchToLogin": "Already have an account? Sign in",
+    "switchToRegister": "New here? Create an account"
+  },
+  "dashboard": {
+    "welcome": "Welcome",
+    "signOut": "Sign out"
+  },
+  "sidebar": {
+    "children": "Children",
+    "alerts": "New alerts"
+  },
+  "overview": {
+    "title": "Overview",
+    "subtitle": "Safety controls and activity at a glance",
+    "welcome": "Welcome back",
+    "snapshot": "Here is a quick snapshot of recent activity and safety.",
+    "score": "Protection score",
+    "scoreNote": "Based on recent activity signals.",
+    "activityTitle": "Activity trend (7 days)",
+    "safetyMix": "Safety mix",
+    "recentAlerts": "Recent alerts",
+    "topSites": "Most blocked sites",
+    "emptyAlerts": "No alerts in the last few days.",
+    "emptySites": "No blocked sites yet.",
+    "quickActions": "Quick actions",
+    "actionNote": "Jump straight to the tasks you use most.",
+    "attempts": "attempts",
+    "noActivity": "No activity yet",
+    "totalLabel": "total",
+    "profile": "Profile settings",
+    "profileNote": "Alerts are sent to the alert email if SMTP is configured.",
+    "metrics": {
+      "total": "Total activity",
+      "blocked": "Blocked attempts",
+      "allowed": "Allowed visits",
+      "malicious": "Malicious links",
+      "alerts": "New alerts",
+      "children": "Protected children"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage account details and alert preferences.",
+    "fullName": "Full name",
+    "alertEmail": "Alert email",
+    "save": "Save profile",
+    "photoTitle": "Profile photo",
+    "photoAlt": "Profile photo",
+    "uploadPhoto": "Upload photo",
+    "removePhoto": "Remove photo",
+    "photoHint": "PNG or JPG up to 2 MB.",
+    "photoSaved": "Photo updated",
+    "photoRemoved": "Photo removed",
+    "photoTooLarge": "Image is too large (max 2 MB).",
+    "photoInvalid": "Please choose an image file."
+  },
+  "children": {
+    "title": "Children",
+    "addChild": "Add child",
+    "name": "Child name",
+    "birthYear": "Birth year (optional)",
+    "create": "Create child",
+    "devices": "Devices",
+    "deviceName": "Device name",
+    "addDevice": "Create device token",
+    "noChildren": "No child profiles yet. Add one to start.",
+    "born": "Born",
+    "never": "Never",
+    "token": "Token",
+    "lastSeen": "Last seen"
+  },
+  "categories": {
+    "title": "Category controls",
+    "selectChild": "Select a child",
+    "save": "Save category settings",
+    "noChild": "Select a child to edit category blocking."
+  },
+  "blocklist": {
+    "title": "Custom block rules",
+    "addRule": "Add rule",
+    "pattern": "Pattern",
+    "ruleType": "Rule type",
+    "category": "Category",
+    "active": "Active",
+    "create": "Create rule",
+    "noRules": "No custom rules yet.",
+    "domain": "Domain",
+    "keyword": "Keyword",
+    "regex": "Regex"
+  },
+  "logs": {
+    "title": "Activity logs",
+    "filterChild": "Filter by child",
+    "noLogs": "No activity logs yet."
+  },
+  "alerts": {
+    "title": "Alerts",
+    "noAlerts": "No alerts yet.",
+    "markRead": "Mark as read",
+    "attemptedAccess": "Attempted to access {site}",
+    "maliciousAccess": "Malicious link detected: {site}",
+    "unknownSite": "unknown site"
+  },
+  "actions": {
+    "remove": "Remove",
+    "none": "None",
+    "all": "All",
+    "saved": "Saved",
+    "viewAlerts": "View alerts",
+    "addChild": "Add child",
+    "createRule": "Create rule",
+    "viewLogs": "View logs",
+    "editProfile": "Edit profile"
+  },
+  "verdict": {
+    "allowed": "Allowed",
+    "blocked": "Blocked",
+    "malicious": "Malicious"
+  },
+  "categoryLabels": {
+    "adult_content": {
+      "name": "Adult Content",
+      "description": "Explicit or sexual content"
+    },
+    "gambling": {
+      "name": "Gambling",
+      "description": "Betting and gambling sites"
+    },
+    "violence": {
+      "name": "Violence",
+      "description": "Graphic violence or gore"
+    },
+    "social_media": {
+      "name": "Social Media",
+      "description": "Social networks and chats"
+    },
+    "downloads": {
+      "name": "Downloads",
+      "description": "File sharing and downloads"
+    },
+    "games": {
+      "name": "Games",
+      "description": "Online games"
+    }
+  },
+  "extension": {
+    "title": "Browser extension",
+    "steps": "Install the extension and connect it to a child device:",
+    "step1": "Load the folder kidsafe-extension as an unpacked extension.",
+    "step2": "Open the extension options and set the API base URL.",
+    "step3": "Paste the device token generated for the child.",
+    "step4": "Keep the browser open so the extension can sync rules."
+  },
+  "status": {
+    "loading": "Loading...",
+    "error": "Something went wrong"
+  }
+}

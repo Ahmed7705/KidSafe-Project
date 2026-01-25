@@ -1,0 +1,181 @@
+﻿{
+  "app": {
+    "title": "KidSafe",
+    "tagline": "أداة حماية إنترنت صديقة للأطفال"
+  },
+  "nav": {
+    "overview": "نظرة عامة",
+    "profile": "الملف الشخصي",
+    "children": "الأطفال",
+    "categories": "الفئات",
+    "blocklist": "قائمة الحظر",
+    "logs": "سجل النشاط",
+    "alerts": "التنبيهات",
+    "extension": "الإضافة"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "fullName": "الاسم الكامل",
+    "signIn": "تسجيل الدخول",
+    "createAccount": "إنشاء حساب",
+    "switchToLogin": "لديك حساب بالفعل؟ سجّل الدخول",
+    "switchToRegister": "مستخدم جديد؟ أنشئ حسابًا"
+  },
+  "dashboard": {
+    "welcome": "مرحبًا",
+    "signOut": "تسجيل الخروج"
+  },
+  "sidebar": {
+    "children": "الأطفال",
+    "alerts": "تنبيهات جديدة"
+  },
+  "overview": {
+    "title": "نظرة عامة",
+    "subtitle": "لمحة سريعة عن الأمان والنشاط",
+    "welcome": "مرحبًا بعودتك",
+    "snapshot": "هذه لقطة سريعة لأحدث النشاط ومستوى الأمان.",
+    "score": "مؤشر الحماية",
+    "scoreNote": "يعتمد على إشارات النشاط الأخيرة.",
+    "activityTitle": "اتجاه النشاط (7 أيام)",
+    "safetyMix": "مزيج الأمان",
+    "recentAlerts": "أحدث التنبيهات",
+    "topSites": "أكثر المواقع المحجوبة",
+    "emptyAlerts": "لا توجد تنبيهات في الأيام الأخيرة.",
+    "emptySites": "لا توجد مواقع محجوبة بعد.",
+    "quickActions": "إجراءات سريعة",
+    "actionNote": "اذهب مباشرة إلى المهام الأكثر استخدامًا.",
+    "attempts": "محاولات",
+    "noActivity": "لا يوجد نشاط بعد",
+    "totalLabel": "إجمالي",
+    "profile": "إعدادات الملف الشخصي",
+    "profileNote": "يتم إرسال التنبيهات إلى البريد إذا تم ضبط SMTP.",
+    "metrics": {
+      "total": "إجمالي النشاط",
+      "blocked": "محاولات محجوبة",
+      "allowed": "زيارات مسموحة",
+      "malicious": "روابط خبيثة",
+      "alerts": "تنبيهات جديدة",
+      "children": "أطفال محميون"
+    }
+  },
+  "profile": {
+    "title": "الملف الشخصي",
+    "subtitle": "إدارة بيانات الحساب وتفضيلات التنبيهات.",
+    "fullName": "الاسم الكامل",
+    "alertEmail": "بريد التنبيهات",
+    "save": "حفظ الملف",
+    "photoTitle": "صورة الملف الشخصي",
+    "photoAlt": "صورة الملف الشخصي",
+    "uploadPhoto": "رفع صورة",
+    "removePhoto": "إزالة الصورة",
+    "photoHint": "PNG أو JPG حتى 2 ميجابايت.",
+    "photoSaved": "تم تحديث الصورة",
+    "photoRemoved": "تم حذف الصورة",
+    "photoTooLarge": "حجم الصورة كبير (الحد 2 ميجابايت).",
+    "photoInvalid": "الرجاء اختيار ملف صورة."
+  },
+  "children": {
+    "title": "الأطفال",
+    "addChild": "إضافة طفل",
+    "name": "اسم الطفل",
+    "birthYear": "سنة الميلاد (اختياري)",
+    "create": "إنشاء ملف طفل",
+    "devices": "الأجهزة",
+    "deviceName": "اسم الجهاز",
+    "addDevice": "إنشاء رمز الجهاز",
+    "noChildren": "لا توجد ملفات أطفال بعد. أضف واحدًا للبدء.",
+    "born": "مواليد",
+    "never": "أبدًا",
+    "token": "الرمز",
+    "lastSeen": "آخر اتصال"
+  },
+  "categories": {
+    "title": "التحكم بالفئات",
+    "selectChild": "اختر طفلًا",
+    "save": "حفظ إعدادات الفئات",
+    "noChild": "اختر طفلًا لتعديل الحظر."
+  },
+  "blocklist": {
+    "title": "قواعد الحظر المخصصة",
+    "addRule": "إضافة قاعدة",
+    "pattern": "النمط",
+    "ruleType": "نوع القاعدة",
+    "category": "الفئة",
+    "active": "مفعّل",
+    "create": "إنشاء قاعدة",
+    "noRules": "لا توجد قواعد مخصصة بعد.",
+    "domain": "نطاق",
+    "keyword": "كلمة مفتاحية",
+    "regex": "تعبير نمطي"
+  },
+  "logs": {
+    "title": "سجل النشاط",
+    "filterChild": "تصفية حسب الطفل",
+    "noLogs": "لا يوجد سجل نشاط بعد."
+  },
+  "alerts": {
+    "title": "التنبيهات",
+    "noAlerts": "لا توجد تنبيهات بعد.",
+    "markRead": "وضع كمقروء",
+    "attemptedAccess": "محاولة الوصول إلى {site}",
+    "maliciousAccess": "تم رصد رابط خبيث: {site}",
+    "unknownSite": "موقع غير معروف"
+  },
+  "actions": {
+    "remove": "إزالة",
+    "none": "بدون",
+    "all": "الكل",
+    "saved": "تم الحفظ",
+    "viewAlerts": "عرض التنبيهات",
+    "addChild": "إضافة طفل",
+    "createRule": "إنشاء قاعدة",
+    "viewLogs": "عرض السجل",
+    "editProfile": "تعديل الملف"
+  },
+  "verdict": {
+    "allowed": "مسموح",
+    "blocked": "محظور",
+    "malicious": "خبيث"
+  },
+  "categoryLabels": {
+    "adult_content": {
+      "name": "محتوى للبالغين",
+      "description": "محتوى صريح أو جنسي"
+    },
+    "gambling": {
+      "name": "القمار",
+      "description": "مواقع الرهان والقمار"
+    },
+    "violence": {
+      "name": "العنف",
+      "description": "عنف شديد أو مشاهد دموية"
+    },
+    "social_media": {
+      "name": "التواصل الاجتماعي",
+      "description": "شبكات اجتماعية ودردشات"
+    },
+    "downloads": {
+      "name": "التنزيلات",
+      "description": "مشاركة الملفات والتنزيلات"
+    },
+    "games": {
+      "name": "الألعاب",
+      "description": "ألعاب عبر الإنترنت"
+    }
+  },
+  "extension": {
+    "title": "إضافة المتصفح",
+    "steps": "ثبّت الإضافة واربطها بجهاز الطفل:",
+    "step1": "حمّل مجلد kidsafe-extension كإضافة غير منشورة.",
+    "step2": "افتح خيارات الإضافة وضع عنوان الـ API.",
+    "step3": "الصق رمز الجهاز الذي أنشأته للطفل.",
+    "step4": "اترك المتصفح مفتوحًا ليتم التزامن."
+  },
+  "status": {
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ ما"
+  }
+}

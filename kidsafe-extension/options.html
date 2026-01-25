@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KidSafe Extension</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>KidSafe Extension</h1>
+      <p>Connect this browser to your KidSafe dashboard.</p>
+      <form id="settings-form">
+        <label>
+          <span>API base URL</span>
+          <input id="apiBaseUrl" type="url" required />
+        </label>
+        <label>
+          <span>Device token</span>
+          <input id="deviceToken" type="text" required />
+        </label>
+        <label>
+          <span>Sync interval (minutes)</span>
+          <input id="syncInterval" type="number" min="1" max="60" step="1" />
+        </label>
+        <button type="submit">Save settings</button>
+      </form>
+      <div id="status" class="status"></div>
+    </div>
+    <script src="options.js"></script>
+  </body>
+</html>
