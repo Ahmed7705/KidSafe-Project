@@ -22,9 +22,10 @@ router.get("/categories", async (req, res) => {
 });
 
 router.get("/rules", async (req, res) => {
+  const targetUserId = req.user.isAdmin && req.query.userId ? toInt(req.query.userId) : req.user.id;
   const [rows] = await pool.query(
     "SELECT id, category_id, pattern, rule_type, is_active, created_at FROM block_rules WHERE user_id = ? ORDER BY created_at DESC",
-    [req.user.id]
+    [targetUserId]
   );
   return res.json(
     rows.map((row) => ({
@@ -49,9 +50,10 @@ router.post("/rules", async (req, res) => {
     return res.status(400).json({ error: "Invalid rule type" });
   }
 
+  const targetUserId = req.user.isAdmin && req.body.userId ? toInt(req.body.userId) : req.user.id;
   const [result] = await pool.query(
     "INSERT INTO block_rules (user_id, category_id, pattern, rule_type, is_active) VALUES (?, ?, ?, ?, ?)",
-    [req.user.id, toInt(categoryId, null), pattern, ruleType, isActive === undefined ? 1 : toBool(isActive) ? 1 : 0]
+    [targetUserId, toInt(categoryId, null), pattern, ruleType, isActive === undefined ? 1 : toBool(isActive) ? 1 : 0]
   );
 
   return res.status(201).json({
@@ -69,9 +71,11 @@ router.put("/rules/:id", async (req, res) => {
     return res.status(400).json({ error: "Invalid rule id" });
   }
   const { pattern, ruleType, categoryId, isActive } = req.body || {};
+  const targetUserId = req.user.isAdmin && req.body.userId ? toInt(req.body.userId) : req.user.id;
+  
   const [rows] = await pool.query(
     "SELECT id FROM block_rules WHERE id = ? AND user_id = ?",
-    [ruleId, req.user.id]
+    [ruleId, targetUserId]
   );
   if (rows.length === 0) {
     return res.status(404).json({ error: "Rule not found" });
@@ -102,9 +106,10 @@ router.delete("/rules/:id", async (req, res) => {
   if (!ruleId) {
     return res.status(400).json({ error: "Invalid rule id" });
   }
+  const targetUserId = req.user.isAdmin && req.query.userId ? toInt(req.query.userId) : req.user.id;
   const [rows] = await pool.query(
     "SELECT id FROM block_rules WHERE id = ? AND user_id = ?",
-    [ruleId, req.user.id]
+    [ruleId, targetUserId]
   );
   if (rows.length === 0) {
     return res.status(404).json({ error: "Rule not found" });

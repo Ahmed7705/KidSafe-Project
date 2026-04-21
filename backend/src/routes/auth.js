@@ -48,7 +48,7 @@ router.post("/login", async (req, res) => {
   }
 
   const [rows] = await pool.query(
-    "SELECT id, email, full_name, password_hash, alert_email FROM users WHERE email = ?",
+    "SELECT id, email, full_name, password_hash, alert_email, is_admin FROM users WHERE email = ?",
     [email]
   );
   if (rows.length === 0) {
@@ -64,7 +64,8 @@ router.post("/login", async (req, res) => {
     id: userRow.id,
     email: userRow.email,
     fullName: userRow.full_name,
-    alertEmail: userRow.alert_email
+    alertEmail: userRow.alert_email,
+    isAdmin: Boolean(userRow.is_admin)
   };
   const token = signJwt({ id: user.id, email: user.email });
   return res.json({ token, user });
@@ -72,7 +73,7 @@ router.post("/login", async (req, res) => {
 
 router.get("/me", authRequired, async (req, res) => {
   const [rows] = await pool.query(
-    "SELECT id, email, full_name, alert_email, created_at FROM users WHERE id = ?",
+    "SELECT id, email, full_name, alert_email, created_at, is_admin FROM users WHERE id = ?",
     [req.user.id]
   );
   if (rows.length === 0) {
@@ -84,7 +85,8 @@ router.get("/me", authRequired, async (req, res) => {
     email: userRow.email,
     fullName: userRow.full_name,
     alertEmail: userRow.alert_email,
-    createdAt: userRow.created_at
+    createdAt: userRow.created_at,
+    isAdmin: Boolean(userRow.is_admin)
   });
 });
 
@@ -101,7 +103,7 @@ router.put("/profile", authRequired, async (req, res) => {
     [fullName || null, alertEmail || null, req.user.id]
   );
   const [rows] = await pool.query(
-    "SELECT id, email, full_name, alert_email FROM users WHERE id = ?",
+    "SELECT id, email, full_name, alert_email, is_admin FROM users WHERE id = ?",
     [req.user.id]
   );
   const userRow = rows[0];
@@ -109,7 +111,8 @@ router.put("/profile", authRequired, async (req, res) => {
     id: userRow.id,
     email: userRow.email,
     fullName: userRow.full_name,
-    alertEmail: userRow.alert_email
+    alertEmail: userRow.alert_email,
+    isAdmin: Boolean(userRow.is_admin)
   });
 });
 

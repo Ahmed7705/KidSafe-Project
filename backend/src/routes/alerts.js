@@ -9,14 +9,22 @@ router.use(authRequired);
 
 router.get("/unread-count", async (req, res) => {
   const childId = toInt(req.query.childId || null, null);
-  const params = [req.user.id];
+  const params = [];
+  let userFilter = "WHERE user_id = ?";
   let childFilter = "";
+
+  if (req.user.isAdmin) {
+    userFilter = "WHERE 1=1";
+  } else {
+    params.push(req.user.id);
+  }
+
   if (childId) {
     childFilter = "AND child_id = ?";
     params.push(childId);
   }
   const [rows] = await pool.query(
-    `SELECT COUNT(*) AS count FROM alerts WHERE user_id = ? AND is_read = 0 ${childFilter}`,
+    `SELECT COUNT(*) AS count FROM alerts ${userFilter} AND is_read = 0 ${childFilter}`,
     params
   );
   return res.json({ count: Number(rows[0]?.count || 0) });
@@ -24,13 +32,27 @@ router.get("/unread-count", async (req, res) => {
 
 router.get("/", async (req, res) => {
   const childId = toInt(req.query.childId || null, null);
+  const alertType = req.query.alertType || null;
   const limit = Math.min(toInt(req.query.limit, 50) || 50, 200);
 
-  const params = [req.user.id];
+  const params = [];
+  let userFilter = "WHERE alerts.user_id = ?";
   let childFilter = "";
+  let typeFilter = "";
+
+  if (req.user.isAdmin) {
+    userFilter = "WHERE 1=1";
+  } else {
+    params.push(req.user.id);
+  }
+
   if (childId) {
     childFilter = "AND alerts.child_id = ?";
     params.push(childId);
+  }
+  if (alertType) {
+    typeFilter = "AND alerts.alert_type = ?";
+    params.push(alertType);
   }
   params.push(limit);
 
@@ -42,7 +64,7 @@ router.get("/", async (req, res) => {
      FROM alerts
      JOIN children ON alerts.child_id = children.id
      LEFT JOIN activity_logs ON alerts.activity_log_id = activity_logs.id
-     WHERE alerts.user_id = ? ${childFilter}
+     ${userFilter} ${childFilter} ${typeFilter}
      ORDER BY alerts.created_at DESC
      LIMIT ?`,
     params
@@ -67,15 +89,56 @@ router.put("/:id/read", async (req, res) => {
   if (!alertId) {
     return res.status(400).json({ error: "Invalid alert id" });
   }
+  const targetUserId = req.user.isAdmin ? null : req.user.id;
   const [rows] = await pool.query(
-    "SELECT id FROM alerts WHERE id = ? AND user_id = ?",
-    [alertId, req.user.id]
+    targetUserId ? "SELECT id FROM alerts WHERE id = ? AND user_id = ?" : "SELECT id FROM alerts WHERE id = ?",
+    targetUserId ? [alertId, targetUserId] : [alertId]
   );
   if (rows.length === 0) {
     return res.status(404).json({ error: "Alert not found" });
   }
   await pool.query("UPDATE alerts SET is_read = 1 WHERE id = ?", [alertId]);
   return res.json({ status: "ok" });
+});
+
+// Mark all alerts as read
+router.put("/read-all", async (req, res) => {
+  const childId = toInt(req.query.childId || null, null);
+  const params = [];
+  let userFilter = "WHERE user_id = ?";
+  let childFilter = "";
+
+  if (req.user.isAdmin) {
+    userFilter = "WHERE 1=1";
+  } else {
+    params.push(req.user.id);
+  }
+
+  if (childId) {
+    childFilter = "AND child_id = ?";
+    params.push(childId);
+  }
+  await pool.query(
+    `UPDATE alerts SET is_read = 1 ${userFilter} AND is_read = 0 ${childFilter}`,
+    params
+  );
+  return res.json({ status: "ok" });
+});
+
+// Get alert statistics
+router.get("/stats", async (req, res) => {
+  const [rows] = await pool.query(
+    `SELECT alert_type, COUNT(*) AS count
+     FROM alerts
+     WHERE user_id = ?
+     GROUP BY alert_type`,
+    [req.user.id]
+  );
+  const stats = {};
+  rows.forEach((row) => {
+    stats[row.alert_type] = Number(row.count);
+  });
+  return res.json(stats);
 });
 
 export default router;

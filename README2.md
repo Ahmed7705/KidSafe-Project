@@ -10,3 +10,7 @@ npm run start
 cd web
 npm install
 npm run dev
+
+
+البريد الإلكتروني: admin@kidsafe.com
+كلمة المرور: admin123

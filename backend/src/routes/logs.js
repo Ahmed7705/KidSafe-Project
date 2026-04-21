@@ -11,8 +11,16 @@ router.get("/", async (req, res) => {
   const childId = toInt(req.query.childId || null, null);
   const limit = Math.min(toInt(req.query.limit, 50) || 50, 200);
 
-  const params = [req.user.id];
+  const params = [];
+  let userFilter = "WHERE children.user_id = ?";
   let childFilter = "";
+
+  if (req.user.isAdmin) {
+    userFilter = "WHERE 1=1";
+  } else {
+    params.push(req.user.id);
+  }
+
   if (childId) {
     childFilter = "AND children.id = ?";
     params.push(childId);
@@ -27,7 +35,7 @@ router.get("/", async (req, res) => {
      FROM activity_logs
      JOIN children ON activity_logs.child_id = children.id
      LEFT JOIN devices ON activity_logs.device_id = devices.id
-     WHERE children.user_id = ? ${childFilter}
+     ${userFilter} ${childFilter}
      ORDER BY activity_logs.created_at DESC
      LIMIT ?`,
     params

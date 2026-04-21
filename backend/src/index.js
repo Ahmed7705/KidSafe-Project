@@ -7,6 +7,9 @@ import blocklistRoutes from "./routes/blocklist.js";
 import logsRoutes from "./routes/logs.js";
 import alertsRoutes from "./routes/alerts.js";
 import extensionRoutes from "./routes/extension.js";
+import screentimeRoutes from "./routes/screentime.js";
+import appsRoutes from "./routes/apps.js";
+import adminRoutes from "./routes/admin.js";
 
 dotenv.config();
 
@@ -42,6 +45,9 @@ app.use("/api/blocklist", blocklistRoutes);
 app.use("/api/logs", logsRoutes);
 app.use("/api/alerts", alertsRoutes);
 app.use("/api/extension", extensionRoutes);
+app.use("/api/screentime", screentimeRoutes);
+app.use("/api/apps", appsRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

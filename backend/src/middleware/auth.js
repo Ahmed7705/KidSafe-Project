@@ -1,6 +1,8 @@
 import { verifyJwt } from "../utils/security.js";
 
-export function authRequired(req, res, next) {
+import pool from "../db.js";
+
+export async function authRequired(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) {
@@ -8,7 +10,9 @@ export function authRequired(req, res, next) {
   }
   try {
     const payload = verifyJwt(token);
-    req.user = payload;
+    const [rows] = await pool.query("SELECT is_admin FROM users WHERE id = ?", [payload.id]);
+    const isAdmin = rows.length > 0 && rows[0].is_admin === 1;
+    req.user = { ...payload, isAdmin };
     return next();
   } catch (error) {
     return res.status(401).json({ error: "Invalid token" });
