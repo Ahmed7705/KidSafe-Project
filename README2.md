@@ -11,6 +11,8 @@ cd web
 npm install
 npm run dev
 
+## حساب الادمن
 
 البريد الإلكتروني: admin@kidsafe.com
 كلمة المرور: admin123
+
