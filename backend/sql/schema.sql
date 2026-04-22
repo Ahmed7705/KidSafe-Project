@@ -46,12 +46,14 @@ CREATE TABLE child_category_settings (
 CREATE TABLE block_rules (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
+  child_id INT DEFAULT NULL,
   category_id INT,
   pattern VARCHAR(255) NOT NULL,
   rule_type ENUM('domain', 'keyword', 'regex') NOT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 

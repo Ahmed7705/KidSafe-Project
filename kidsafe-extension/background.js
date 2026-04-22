@@ -1,7 +1,7 @@
 const DEFAULT_SETTINGS = {
   apiBaseUrl: "http://localhost:4000",
   deviceToken: "",
-  syncIntervalMinutes: 15
+  syncIntervalMinutes: 2
 };
 
 let cachedConfig = null;
@@ -111,7 +111,7 @@ async function sendHeartbeat() {
     if (tabs && tabs[0] && tabs[0].url && !tabs[0].url.startsWith("chrome")) {
       activeHostname = new URL(tabs[0].url).hostname;
     }
-  } catch (err) {}
+  } catch (err) { }
 
   try {
     const response = await fetch(`${settings.apiBaseUrl}/api/extension/heartbeat`, {
@@ -129,9 +129,10 @@ async function sendHeartbeat() {
         screenTimeBlocked = false;
         unblockScreenTime();
         if (data.blockedSites && Array.isArray(data.blockedSites)) {
-        blockSpecificSites(data.blockedSites);
-      } else {
-        unblockSpecificSites();
+          blockSpecificSites(data.blockedSites);
+        } else {
+          unblockSpecificSites();
+        }
       }
     }
     lastHeartbeat = Date.now();
@@ -144,7 +145,7 @@ async function blockSpecificSites(sites) {
   try {
     const existing = await chrome.declarativeNetRequest.getDynamicRules();
     const siteRuleIds = existing.filter(r => r.id >= 100000 && r.id < 200000).map(r => r.id);
-    
+
     if (sites.length === 0) {
       if (siteRuleIds.length > 0) {
         await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: siteRuleIds });
@@ -166,6 +167,24 @@ async function blockSpecificSites(sites) {
       removeRuleIds: siteRuleIds,
       addRules: newRules
     });
+
+    // Redirect any currently open tabs that match the blocked sites
+    chrome.tabs.query({}, (tabs) => {
+      for (const tab of tabs) {
+        if (!tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("chrome-extension://")) continue;
+        try {
+          const tabHostname = new URL(tab.url).hostname;
+          for (const site of sites) {
+            // Match exactly or as a subdomain (e.g. www.instagram.com matches instagram.com)
+            if (tabHostname === site || tabHostname.endsWith("." + site)) {
+              const blockedUrl = chrome.runtime.getURL(`/blocked.html?reason=${encodeURIComponent("Site time limit reached for " + site)}`);
+              chrome.tabs.update(tab.id, { url: blockedUrl });
+              break;
+            }
+          }
+        } catch (e) { }
+      }
+    });
   } catch (error) {
     console.warn("Specific site block failed", error);
   }
@@ -178,7 +197,7 @@ async function unblockSpecificSites() {
     if (siteRuleIds.length > 0) {
       await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: siteRuleIds });
     }
-  } catch (error) {}
+  } catch (error) { }
 }
 
 async function blockAllPages(reason) {
@@ -192,6 +211,14 @@ async function blockAllPages(reason) {
         action: { type: "redirect", redirect: { url: blockedUrl } },
         condition: { urlFilter: "*", resourceTypes: ["main_frame"], excludedInitiatorDomains: [] }
       }]
+    });
+
+    // Redirect all currently open tabs (except extension and chrome pages)
+    chrome.tabs.query({}, (tabs) => {
+      for (const tab of tabs) {
+        if (!tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("chrome-extension://")) continue;
+        chrome.tabs.update(tab.id, { url: blockedUrl });
+      }
     });
   } catch (error) {
     console.warn("Block all failed", error);

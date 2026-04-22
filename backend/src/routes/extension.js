@@ -113,6 +113,9 @@ async function incrementScreenTime(childId, deviceId, hostname) {
       cleanHost = hostname.trim().toLowerCase();
       if (!cleanHost.startsWith("http")) cleanHost = "http://" + cleanHost;
       cleanHost = new URL(cleanHost).hostname;
+      if (cleanHost.startsWith("www.")) {
+        cleanHost = cleanHost.substring(4);
+      }
     } catch(e) {}
   }
 

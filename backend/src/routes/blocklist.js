@@ -24,13 +24,19 @@ router.get("/categories", async (req, res) => {
 router.get("/rules", async (req, res) => {
   const targetUserId = req.user.isAdmin && req.query.userId ? toInt(req.query.userId) : req.user.id;
   const [rows] = await pool.query(
-    "SELECT id, category_id, pattern, rule_type, is_active, created_at FROM block_rules WHERE user_id = ? ORDER BY created_at DESC",
+    `SELECT b.id, b.category_id, b.pattern, b.rule_type, b.is_active, b.created_at, b.child_id, c.name as child_name 
+     FROM block_rules b 
+     LEFT JOIN children c ON b.child_id = c.id 
+     WHERE b.user_id = ? 
+     ORDER BY b.created_at DESC`,
     [targetUserId]
   );
   return res.json(
     rows.map((row) => ({
       id: row.id,
       categoryId: row.category_id,
+      childId: row.child_id,
+      childName: row.child_name,
       pattern: row.pattern,
       ruleType: row.rule_type,
       isActive: toBool(row.is_active),
@@ -40,7 +46,7 @@ router.get("/rules", async (req, res) => {
 });
 
 router.post("/rules", async (req, res) => {
-  const { pattern, ruleType, categoryId, isActive } = req.body || {};
+  let { pattern, ruleType, categoryId, isActive, childId } = req.body || {};
   const required = requireFields(req.body, ["pattern", "ruleType"]);
   if (!required.ok) {
     return res.status(400).json({ error: "Missing fields", missing: required.missing });
@@ -50,14 +56,29 @@ router.post("/rules", async (req, res) => {
     return res.status(400).json({ error: "Invalid rule type" });
   }
 
+  if (ruleType === "domain" && pattern) {
+    try {
+      let cleanPattern = pattern.trim().toLowerCase();
+      if (!cleanPattern.startsWith("http")) cleanPattern = "http://" + cleanPattern;
+      cleanPattern = new URL(cleanPattern).hostname;
+      if (cleanPattern.startsWith("www.")) {
+        cleanPattern = cleanPattern.substring(4);
+      }
+      pattern = cleanPattern;
+    } catch (e) {
+      // ignore
+    }
+  }
+
   const targetUserId = req.user.isAdmin && req.body.userId ? toInt(req.body.userId) : req.user.id;
   const [result] = await pool.query(
-    "INSERT INTO block_rules (user_id, category_id, pattern, rule_type, is_active) VALUES (?, ?, ?, ?, ?)",
-    [targetUserId, toInt(categoryId, null), pattern, ruleType, isActive === undefined ? 1 : toBool(isActive) ? 1 : 0]
+    "INSERT INTO block_rules (user_id, child_id, category_id, pattern, rule_type, is_active) VALUES (?, ?, ?, ?, ?, ?)",
+    [targetUserId, toInt(childId, null), toInt(categoryId, null), pattern, ruleType, isActive === undefined ? 1 : toBool(isActive) ? 1 : 0]
   );
 
   return res.status(201).json({
     id: result.insertId,
+    childId: toInt(childId, null),
     categoryId: toInt(categoryId, null),
     pattern,
     ruleType,
@@ -70,7 +91,22 @@ router.put("/rules/:id", async (req, res) => {
   if (!ruleId) {
     return res.status(400).json({ error: "Invalid rule id" });
   }
-  const { pattern, ruleType, categoryId, isActive } = req.body || {};
+  let { pattern, ruleType, categoryId, isActive } = req.body || {};
+  
+  if (ruleType === "domain" && pattern) {
+    try {
+      let cleanPattern = pattern.trim().toLowerCase();
+      if (!cleanPattern.startsWith("http")) cleanPattern = "http://" + cleanPattern;
+      cleanPattern = new URL(cleanPattern).hostname;
+      if (cleanPattern.startsWith("www.")) {
+        cleanPattern = cleanPattern.substring(4);
+      }
+      pattern = cleanPattern;
+    } catch (e) {
+      // ignore
+    }
+  }
+
   const targetUserId = req.user.isAdmin && req.body.userId ? toInt(req.body.userId) : req.user.id;
   
   const [rows] = await pool.query(

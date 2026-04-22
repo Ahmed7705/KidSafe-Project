@@ -233,6 +233,9 @@ router.post("/:childId/sites", async (req, res) => {
   try {
     if (!cleanHost.startsWith("http")) cleanHost = "http://" + cleanHost;
     cleanHost = new URL(cleanHost).hostname;
+    if (cleanHost.startsWith("www.")) {
+      cleanHost = cleanHost.substring(4);
+    }
   } catch(e) {
     // ignore
   }

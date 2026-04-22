@@ -819,9 +819,11 @@ function ProfileSection({ token, user, profileImage, onProfileImageChange, onUse
   );
 }
 
-function ChildrenSection({ token, children, onRefresh }) {
+function ChildrenSection({ token, children, onUpdate }) {
   const [form, setForm] = useState({ name: "", birthYear: "" });
   const [status, setStatus] = useState({ loading: false, error: "" });
+  const [editingChild, setEditingChild] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", birthYear: "" });
   const [devicesByChild, setDevicesByChild] = useState({});
   const [deviceName, setDeviceName] = useState({});
   const [guardiansByChild, setGuardiansByChild] = useState({});
@@ -838,7 +840,7 @@ function ChildrenSection({ token, children, onRefresh }) {
         body: { name: form.name, birthYear: form.birthYear }
       });
       setForm({ name: "", birthYear: "" });
-      await onRefresh();
+      await onUpdate();
       setStatus({ loading: false, error: "" });
     } catch (error) {
       setStatus({ loading: false, error: error.message || t("status.error") });
@@ -886,6 +888,35 @@ function ChildrenSection({ token, children, onRefresh }) {
     await loadGuardians(childId);
   };
 
+  const handleEditClick = (child) => {
+    setEditingChild(child.id);
+    setEditForm({ name: child.name, birthYear: child.birthYear || "" });
+  };
+
+  const handleUpdateChild = async (childId) => {
+    try {
+      await apiRequest(`/api/children/${childId}`, {
+        method: "PUT",
+        token,
+        body: { name: editForm.name, birthYear: editForm.birthYear || null }
+      });
+      setEditingChild(null);
+      await onUpdate();
+    } catch (error) {
+      alert(error.message || t("status.error"));
+    }
+  };
+
+  const handleDeleteChild = async (childId) => {
+    if (!window.confirm("هل أنت متأكد من حذف ملف هذا الطفل؟ لا يمكن التراجع عن هذا الإجراء.")) return;
+    try {
+      await apiRequest(`/api/children/${childId}`, { method: "DELETE", token });
+      await onUpdate();
+    } catch (error) {
+      alert(error.message || t("status.error"));
+    }
+  };
+
   return (
     <div className="section-stack">
       <div className="card">
@@ -909,14 +940,38 @@ function ChildrenSection({ token, children, onRefresh }) {
       {children.map((child) => (
         <div key={child.id} className="card">
           <div className="card-header">
-            <div>
-              <strong>{child.name}</strong>
-              <span className="muted">{child.birthYear ? `${t("children.born")} ${child.birthYear}` : ""}</span>
-            </div>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button className="ghost" onClick={() => loadDevices(child.id)}>{t("children.devices")}</button>
-              <button className="ghost" onClick={() => loadGuardians(child.id)}>{t("children.guardians")}</button>
-            </div>
+            {editingChild === child.id ? (
+              <div style={{ display: "flex", gap: "8px", flex: 1, alignItems: "center", flexWrap: "wrap" }}>
+                <input 
+                  value={editForm.name} 
+                  onChange={(e) => setEditForm(p => ({ ...p, name: e.target.value }))} 
+                  placeholder={t("children.name")}
+                  style={{ flex: 1, minWidth: "150px" }}
+                />
+                <input 
+                  value={editForm.birthYear} 
+                  onChange={(e) => setEditForm(p => ({ ...p, birthYear: e.target.value }))} 
+                  placeholder={t("children.birthYear")}
+                  style={{ width: "120px" }}
+                />
+                <button className="secondary" onClick={() => handleUpdateChild(child.id)}>{t("admin.save") || "حفظ"}</button>
+                <button className="ghost" onClick={() => setEditingChild(null)}>{t("admin.cancel") || "إلغاء"}</button>
+              </div>
+            ) : (
+              <div>
+                <strong>{child.name}</strong>
+                <span className="muted">{child.birthYear ? `${t("children.born")} ${child.birthYear}` : ""}</span>
+              </div>
+            )}
+            
+            {editingChild !== child.id && (
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <button className="ghost" onClick={() => handleEditClick(child)}>تعديل</button>
+                <button className="ghost" style={{ color: "var(--danger)" }} onClick={() => handleDeleteChild(child.id)}>{t("actions.remove")}</button>
+                <button className="ghost" onClick={() => loadDevices(child.id)}>{t("children.devices")}</button>
+                <button className="ghost" onClick={() => loadGuardians(child.id)}>{t("children.guardians")}</button>
+              </div>
+            )}
           </div>
 
           {/* Devices */}
@@ -1111,7 +1166,8 @@ function BlocklistSection({ token, children, activeChild, setActiveChild }) {
       let body = {
         pattern: form.pattern,
         ruleType: form.ruleType,
-        categoryId: form.categoryId || null
+        categoryId: form.categoryId || null,
+        childId: activeChild || null
       };
       if (activeChild && children) {
         const child = children.find(c => c.id === activeChild);
@@ -1203,6 +1259,7 @@ function BlocklistSection({ token, children, activeChild, setActiveChild }) {
               <div>
                 <strong>{rule.pattern}</strong>
                 <span className="muted">{formatRuleType(rule.ruleType)}</span>
+                {rule.childName && <span className="muted" style={{ marginInlineStart: "8px" }}>({rule.childName})</span>}
               </div>
               <button className="ghost" type="button" onClick={() => handleDelete(rule.id)}>
                 {t("actions.remove")}
@@ -1445,7 +1502,7 @@ function ScreenTimeSection({ token, children }) {
         <p className="muted">{t("screentime.subtitle")}</p>
         <label className="select-inline">
           <span>{t("screentime.selectChild")}</span>
-          <select value={selectedChild} onChange={(e) => setSelectedChild(e.target.value)}>
+          <select value={selectedChild} onChange={(e) => setSelectedChild(parseInt(e.target.value, 10))}>
             {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </label>
@@ -1509,6 +1566,11 @@ function ScreenTimeSection({ token, children }) {
       <div className="card">
         <h3>{t("screentime.siteLimitsTitle")}</h3>
         <p className="muted">{t("screentime.siteLimitsDesc")}</p>
+        {selectedChild && children.length > 0 && (
+          <div style={{ marginBottom: "12px", padding: "8px 12px", background: "var(--surface-alt, #f0f7f4)", borderRadius: "8px", fontSize: "0.9rem" }}>
+            <strong>{children.find(c => c.id == selectedChild)?.name}</strong>
+          </div>
+        )}
         <form onSubmit={handleAddSiteLimit} className="device-form" style={{ marginBottom: "16px" }}>
           <input type="text" placeholder={t("screentime.hostname")} value={newSiteLimit.hostname} required
             onChange={(e) => setNewSiteLimit(p => ({...p, hostname: e.target.value}))} />
@@ -1523,6 +1585,7 @@ function ScreenTimeSection({ token, children }) {
               <div>
                 <strong>{site.hostname}</strong>
                 <span className="muted">{t("screentime.timeSpent")}: {site.usageMinutes} / {site.limitMinutes} {t("screentime.minutes")}</span>
+                <span className="muted" style={{ marginInlineStart: "8px" }}>({children.find(c => c.id == selectedChild)?.name})</span>
               </div>
               <button className="ghost" style={{ padding: "6px 12px", fontSize: "0.8rem", color: "var(--danger)" }}
                 onClick={() => handleRemoveSiteLimit(site.id)}>{t("screentime.remove")}</button>
