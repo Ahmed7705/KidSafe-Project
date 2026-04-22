@@ -14,6 +14,7 @@
     "extension": "Extension",
     "screentime": "Screen Time",
     "apps": "Apps & Games",
+    "usageReport": "Usage Report",
     "adminPanel": "Admin Panel"
   },
   "auth": {
@@ -186,6 +187,25 @@
     "noSites": "No site limits configured.",
     "timeSpent": "Used",
     "remove": "Remove"
+  },
+  "usageReport": {
+    "title": "Usage Report",
+    "subtitle": "Detailed internet usage report for all children.",
+    "allChildren": "All Children",
+    "filterChild": "Filter by child",
+    "last7days": "Last 7 days",
+    "last14days": "Last 14 days",
+    "last30days": "Last 30 days",
+    "dailyUsage": "Daily Usage",
+    "siteBreakdown": "Site Breakdown",
+    "child": "Child",
+    "site": "Site",
+    "date": "Date",
+    "duration": "Duration",
+    "totalToday": "Total Today",
+    "noData": "No usage data yet.",
+    "topSites": "Top Sites",
+    "minute": "min"
   },
   "apps": {
     "title": "Apps & Games Management",

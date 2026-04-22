@@ -247,6 +247,7 @@ function Dashboard({
         { id: "categories", label: t("nav.categories") },
         { id: "blocklist", label: t("nav.blocklist") },
         { id: "screentime", label: t("nav.screentime") },
+        { id: "usageReport", label: t("nav.usageReport") },
         { id: "apps", label: t("nav.apps") },
         { id: "logs", label: t("nav.logs") },
         { id: "alerts", label: t("nav.alerts") },
@@ -399,6 +400,9 @@ function Dashboard({
         )}
         {active === "screentime" && (
           <ScreenTimeSection token={token} children={children} activeChild={activeChild} setActiveChild={setActiveChild} />
+        )}
+        {active === "usageReport" && (
+          <UsageReportSection token={token} children={children} />
         )}
         {active === "logs" && (
           <LogsSection token={token} children={children} activeChild={activeChild} setActiveChild={setActiveChild} />
@@ -1610,6 +1614,216 @@ function ScreenTimeSection({ token, children }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function UsageReportSection({ token, children }) {
+  const [filterChild, setFilterChild] = useState("");
+  const [days, setDays] = useState(7);
+  const [dailyData, setDailyData] = useState([]);
+  const [siteData, setSiteData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ days });
+      if (filterChild) params.append("childId", filterChild);
+      const [daily, sites] = await Promise.all([
+        apiRequest(`/api/screentime/report/daily?${params}`, { token }),
+        apiRequest(`/api/screentime/report/sites?${params}`, { token })
+      ]);
+      setDailyData(daily);
+      setSiteData(sites);
+    } catch (e) {
+      console.warn("Usage report error", e);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadData(); }, [filterChild, days, token]);
+
+  // Group daily data by date for chart
+  const dateMap = {};
+  dailyData.forEach(d => {
+    const dateStr = typeof d.date === "string" ? d.date.slice(0, 10) : new Date(d.date).toISOString().slice(0, 10);
+    if (!dateMap[dateStr]) dateMap[dateStr] = { date: dateStr, total: 0, byChild: {} };
+    dateMap[dateStr].total += d.usageMinutes;
+    dateMap[dateStr].byChild[d.childName] = (dateMap[dateStr].byChild[d.childName] || 0) + d.usageMinutes;
+  });
+  const chartDays = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
+  const maxMinutes = Math.max(...chartDays.map(d => d.total), 1);
+
+  // Top sites aggregation
+  const siteAgg = {};
+  siteData.forEach(s => {
+    const key = s.hostname;
+    if (!siteAgg[key]) siteAgg[key] = { hostname: key, total: 0, children: {} };
+    siteAgg[key].total += s.usageMinutes;
+    siteAgg[key].children[s.childName] = (siteAgg[key].children[s.childName] || 0) + s.usageMinutes;
+  });
+  const topSites = Object.values(siteAgg).sort((a, b) => b.total - a.total).slice(0, 10);
+  const maxSite = Math.max(...topSites.map(s => s.total), 1);
+
+  // Unique child colors
+  const childNames = [...new Set([...dailyData.map(d => d.childName), ...siteData.map(s => s.childName)])];
+  const colors = ["#2ecc71", "#3498db", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#e84393"];
+  const childColor = (name) => colors[childNames.indexOf(name) % colors.length];
+
+  // Today's summary
+  const today = new Date().toISOString().slice(0, 10);
+  const todaySummary = {};
+  dailyData.filter(d => {
+    const dateStr = typeof d.date === "string" ? d.date.slice(0, 10) : new Date(d.date).toISOString().slice(0, 10);
+    return dateStr === today;
+  }).forEach(d => {
+    if (!todaySummary[d.childName]) todaySummary[d.childName] = 0;
+    todaySummary[d.childName] += d.usageMinutes;
+  });
+
+  const formatDate = (d) => {
+    try {
+      const dt = typeof d === "string" ? new Date(d) : d;
+      return dt.toLocaleDateString();
+    } catch (e) { return d; }
+  };
+
+  return (
+    <div className="section-stack">
+      <div className="card">
+        <h2>{t("usageReport.title")}</h2>
+        <p className="muted">{t("usageReport.subtitle")}</p>
+        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center" }}>
+          <label className="select-inline">
+            <span>{t("usageReport.filterChild")}</span>
+            <select value={filterChild} onChange={(e) => setFilterChild(e.target.value)}>
+              <option value="">{t("usageReport.allChildren")}</option>
+              {children.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+          <label className="select-inline">
+            <select value={days} onChange={(e) => setDays(Number(e.target.value))}>
+              <option value={7}>{t("usageReport.last7days")}</option>
+              <option value={14}>{t("usageReport.last14days")}</option>
+              <option value={30}>{t("usageReport.last30days")}</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {/* Today's Summary Cards */}
+      {Object.keys(todaySummary).length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "16px" }}>
+          {Object.entries(todaySummary).map(([name, mins]) => (
+            <div key={name} className="card" style={{ textAlign: "center", borderTop: `4px solid ${childColor(name)}` }}>
+              <strong style={{ fontSize: "1.1rem" }}>{name}</strong>
+              <div style={{ fontSize: "2rem", fontWeight: "700", color: childColor(name), margin: "8px 0" }}>{mins}</div>
+              <span className="muted">{t("usageReport.minute")} — {t("usageReport.totalToday")}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Daily Usage Chart */}
+      <div className="card">
+        <h3>{t("usageReport.dailyUsage")}</h3>
+        {chartDays.length === 0 && <div className="empty">{t("usageReport.noData")}</div>}
+        {chartDays.length > 0 && (
+          <div style={{ display: "flex", alignItems: "flex-end", gap: "6px", minHeight: "200px", padding: "16px 0" }}>
+            {chartDays.map(day => (
+              <div key={day.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                <div style={{ display: "flex", flexDirection: "column", width: "100%", alignItems: "center" }}>
+                  {Object.entries(day.byChild).map(([cName, cMins]) => {
+                    const pct = Math.round((cMins / maxMinutes) * 160);
+                    return (
+                      <div key={cName} title={`${cName}: ${cMins} ${t("usageReport.minute")}`}
+                        style={{ width: "70%", height: `${Math.max(pct, 4)}px`, background: childColor(cName), borderRadius: "4px 4px 0 0", transition: "height 0.3s" }}></div>
+                    );
+                  })}
+                </div>
+                <span style={{ fontSize: "0.7rem", color: "var(--muted)", writingMode: "horizontal-tb", textAlign: "center" }}>
+                  {day.date.slice(5)}
+                </span>
+                <span style={{ fontSize: "0.7rem", fontWeight: "600" }}>{day.total}m</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {/* Legend */}
+        {childNames.length > 0 && (
+          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", marginTop: "8px" }}>
+            {childNames.map(name => (
+              <div key={name} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.85rem" }}>
+                <span style={{ width: "12px", height: "12px", borderRadius: "50%", background: childColor(name), display: "inline-block" }}></span>
+                {name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Top Sites Chart */}
+      <div className="card">
+        <h3>{t("usageReport.topSites")}</h3>
+        {topSites.length === 0 && <div className="empty">{t("usageReport.noData")}</div>}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {topSites.map(site => (
+            <div key={site.hostname} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <span style={{ minWidth: "140px", fontSize: "0.85rem", fontWeight: "600", textAlign: "end" }}>{site.hostname}</span>
+              <div style={{ flex: 1, background: "var(--surface-alt, #f0f0f0)", borderRadius: "8px", overflow: "hidden", height: "28px", position: "relative" }}>
+                {Object.entries(site.children).map(([cName, cMins], i) => {
+                  const w = Math.round((cMins / maxSite) * 100);
+                  return (
+                    <div key={cName} title={`${cName}: ${cMins} ${t("usageReport.minute")}`}
+                      style={{ position: "absolute", top: 0, left: `${Object.entries(site.children).slice(0, i).reduce((s, [, v]) => s + Math.round((v / maxSite) * 100), 0)}%`, width: `${w}%`, height: "100%", background: childColor(cName), transition: "width 0.3s" }}></div>
+                  );
+                })}
+              </div>
+              <span style={{ minWidth: "50px", fontSize: "0.85rem", fontWeight: "600" }}>{site.total}m</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Detailed Table */}
+      <div className="card">
+        <h3>{t("usageReport.siteBreakdown")}</h3>
+        {siteData.length === 0 && !loading && <div className="empty">{t("usageReport.noData")}</div>}
+        {siteData.length > 0 && (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid var(--border)", textAlign: "start" }}>
+                  <th style={{ padding: "10px 12px", textAlign: "start" }}>{t("usageReport.child")}</th>
+                  <th style={{ padding: "10px 12px", textAlign: "start" }}>{t("usageReport.site")}</th>
+                  <th style={{ padding: "10px 12px", textAlign: "start" }}>{t("usageReport.date")}</th>
+                  <th style={{ padding: "10px 12px", textAlign: "start" }}>{t("usageReport.duration")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {siteData.map((row, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td style={{ padding: "10px 12px" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: childColor(row.childName) }}></span>
+                        {row.childName}
+                      </span>
+                    </td>
+                    <td style={{ padding: "10px 12px", fontWeight: "500" }}>{row.hostname}</td>
+                    <td style={{ padding: "10px 12px" }}>{formatDate(row.date)}</td>
+                    <td style={{ padding: "10px 12px" }}>
+                      <span style={{ background: "var(--surface-alt, #f0f0f0)", padding: "4px 10px", borderRadius: "12px", fontWeight: "600" }}>
+                        {row.usageMinutes} {t("usageReport.minute")}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

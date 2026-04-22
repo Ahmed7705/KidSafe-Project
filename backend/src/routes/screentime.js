@@ -18,6 +18,48 @@ async function verifyChildAccess(childId, user) {
   return rows.length > 0;
 }
 
+// ===== USAGE REPORT (must be before /:childId) =====
+
+router.get("/report/daily", async (req, res) => {
+  const days = Math.min(toInt(req.query.days, 7) || 7, 30);
+  const childId = toInt(req.query.childId, null);
+
+  let query = `
+    SELECT u.child_id, c.name as child_name, u.date, u.usage_minutes
+    FROM screen_time_usage u
+    JOIN children c ON u.child_id = c.id
+    LEFT JOIN child_guardians cg ON c.id = cg.child_id AND cg.user_id = ?
+    WHERE (c.user_id = ? OR cg.user_id = ?${req.user.isAdmin ? ' OR 1=1' : ''})
+      AND u.date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+  `;
+  const params = [req.user.id, req.user.id, req.user.id, days];
+  if (childId) { query += " AND u.child_id = ?"; params.push(childId); }
+  query += " ORDER BY u.date DESC, c.name ASC";
+
+  const [rows] = await pool.query(query, params);
+  return res.json(rows.map(r => ({ childId: r.child_id, childName: r.child_name, date: r.date, usageMinutes: r.usage_minutes })));
+});
+
+router.get("/report/sites", async (req, res) => {
+  const days = Math.min(toInt(req.query.days, 7) || 7, 30);
+  const childId = toInt(req.query.childId, null);
+
+  let query = `
+    SELECT u.child_id, c.name as child_name, u.hostname, u.date, u.usage_minutes
+    FROM site_time_usage u
+    JOIN children c ON u.child_id = c.id
+    LEFT JOIN child_guardians cg ON c.id = cg.child_id AND cg.user_id = ?
+    WHERE (c.user_id = ? OR cg.user_id = ?${req.user.isAdmin ? ' OR 1=1' : ''})
+      AND u.date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+  `;
+  const params = [req.user.id, req.user.id, req.user.id, days];
+  if (childId) { query += " AND u.child_id = ?"; params.push(childId); }
+  query += " ORDER BY u.date DESC, u.usage_minutes DESC";
+
+  const [rows] = await pool.query(query, params);
+  return res.json(rows.map(r => ({ childId: r.child_id, childName: r.child_name, hostname: r.hostname, date: r.date, usageMinutes: r.usage_minutes })));
+});
+
 // GET /api/screentime/:childId — get screen time rules
 router.get("/:childId", async (req, res) => {
   const childId = toInt(req.params.childId);
