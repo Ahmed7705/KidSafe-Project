@@ -1586,10 +1586,22 @@ function ScreenTimeSection({ token, children }) {
         <div className="device-list">
           {siteLimits.map(site => (
             <div key={site.id} className="device-item">
-              <div>
-                <strong>{site.hostname}</strong>
-                <span className="muted">{t("screentime.timeSpent")}: {site.usageMinutes} / {site.limitMinutes} {t("screentime.minutes")}</span>
-                <span className="muted" style={{ marginInlineStart: "8px" }}>({children.find(c => c.id == selectedChild)?.name})</span>
+              <div style={{ flex: 1 }}>
+                <div>
+                  <strong>{site.hostname}</strong>
+                  <span className="muted">{t("screentime.timeSpent")}: {site.usageMinutes} / {site.limitMinutes} {t("screentime.minutes")}</span>
+                  <span className="muted" style={{ marginInlineStart: "8px" }}>({children.find(c => c.id == selectedChild)?.name})</span>
+                </div>
+                {site.firstActivityAt && (
+                  <div style={{ fontSize: "0.85rem", marginTop: "4px" }}>
+                    <span className="muted">{t("screentime.startedAt")}: {formatDate(site.firstActivityAt)}</span>
+                    {site.usageMinutes >= site.limitMinutes && site.lastActivityAt && (
+                      <span className="muted" style={{ marginInlineStart: "16px", color: "var(--danger)" }}>
+                        {t("screentime.blockedAt")}: {formatDate(site.lastActivityAt)}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <button className="ghost" style={{ padding: "6px 12px", fontSize: "0.8rem", color: "var(--danger)" }}
                 onClick={() => handleRemoveSiteLimit(site.id)}>{t("screentime.remove")}</button>

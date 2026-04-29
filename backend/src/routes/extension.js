@@ -80,10 +80,9 @@ async function checkScreenTime(childId) {
 
   // Check daily limit
   if (rule.daily_limit_minutes) {
-    const today = now.toISOString().slice(0, 10);
     const [usage] = await pool.query(
-      "SELECT usage_minutes FROM screen_time_usage WHERE child_id = ? AND date = ?",
-      [childId, today]
+      "SELECT usage_minutes FROM screen_time_usage WHERE child_id = ? AND DATE(date) = CURDATE()",
+      [childId]
     );
     const usedMinutes = usage[0]?.usage_minutes || 0;
 
@@ -96,14 +95,17 @@ async function checkScreenTime(childId) {
 }
 
 async function incrementScreenTime(childId, deviceId, hostname) {
-  const today = new Date().toISOString().slice(0, 10);
+  // Use CURDATE() everywhere so MySQL's timezone is the single source of truth.
+  // This avoids JS UTC date strings mismatching MySQL stored dates.
+
+  // Atomic upsert for general screen time with 50-second race-condition guard
   await pool.query(
     `INSERT INTO screen_time_usage (child_id, device_id, date, usage_minutes, last_activity_at)
-     VALUES (?, ?, ?, 1, NOW())
+     VALUES (?, ?, CURDATE(), 1, NOW())
      ON DUPLICATE KEY UPDATE
-       usage_minutes = usage_minutes + 1,
-       last_activity_at = NOW()`,
-    [childId, deviceId, today]
+       usage_minutes = usage_minutes + IF(TIMESTAMPDIFF(SECOND, last_activity_at, NOW()) >= 50, 1, 0),
+       last_activity_at = IF(TIMESTAMPDIFF(SECOND, last_activity_at, NOW()) >= 50, NOW(), last_activity_at)`,
+    [childId, deviceId]
   );
 
   // Per-site time limit logic
@@ -116,31 +118,32 @@ async function incrementScreenTime(childId, deviceId, hostname) {
       if (cleanHost.startsWith("www.")) {
         cleanHost = cleanHost.substring(4);
       }
-    } catch(e) {}
+    } catch (e) { }
   }
 
   if (cleanHost) {
+    // Atomic upsert for per-site usage with 50-second race-condition guard
     await pool.query(
-      `INSERT INTO site_time_usage (child_id, hostname, date, usage_minutes, last_activity_at)
-       VALUES (?, ?, ?, 1, NOW())
+      `INSERT INTO site_time_usage (child_id, hostname, date, usage_minutes, first_activity_at, last_activity_at)
+       VALUES (?, ?, CURDATE(), 1, NOW(), NOW())
        ON DUPLICATE KEY UPDATE
-         usage_minutes = usage_minutes + 1,
-         last_activity_at = NOW()`,
-      [childId, cleanHost, today]
+         usage_minutes = usage_minutes + IF(TIMESTAMPDIFF(SECOND, last_activity_at, NOW()) >= 50, 1, 0),
+         last_activity_at = IF(TIMESTAMPDIFF(SECOND, last_activity_at, NOW()) >= 50, NOW(), last_activity_at)`,
+      [childId, cleanHost]
     );
   }
 }
 
 async function checkSiteTimeLimits(childId) {
-  const today = new Date().toISOString().slice(0, 10);
+  // Use DATE(u.date) = CURDATE() so comparison works regardless of time component
   const [rows] = await pool.query(
-    `SELECT l.hostname 
+    `SELECT l.hostname, u.first_activity_at, u.last_activity_at 
      FROM site_time_limits l
-     JOIN site_time_usage u ON l.child_id = u.child_id AND l.hostname = u.hostname AND u.date = ?
+     JOIN site_time_usage u ON l.child_id = u.child_id AND l.hostname = u.hostname AND DATE(u.date) = CURDATE()
      WHERE l.child_id = ? AND u.usage_minutes >= l.limit_minutes`,
-    [today, childId]
+    [childId]
   );
-  return rows.map((r) => r.hostname);
+  return rows;
 }
 
 async function getSafeSearchSettings(childId) {
@@ -419,8 +422,8 @@ router.post("/logs", async (req, res) => {
     await checkEmergencyAlert(context, hostname);
   }
 
-  // Increment screen time usage
-  await incrementScreenTime(context.child_id, context.device_id, hostname);
+  // Screen time usage is incremented only in the /heartbeat endpoint
+  // to avoid over-counting usage based on page navigations.
 
   await pool.query("UPDATE devices SET last_seen_at = NOW() WHERE id = ?", [context.device_id]);
 
@@ -447,7 +450,7 @@ router.post("/heartbeat", async (req, res) => {
   // Return screen time status
   const screenTimeResult = await checkScreenTime(context.child_id);
   const blockedSites = await checkSiteTimeLimits(context.child_id);
-  
+
   return res.json({
     status: "ok",
     screenTime: screenTimeResult,

@@ -186,6 +186,8 @@
     "addSite": "Add Site Limit",
     "noSites": "No site limits configured.",
     "timeSpent": "Used",
+    "startedAt": "Started At",
+    "blockedAt": "Blocked At",
     "remove": "Remove"
   },
   "usageReport": {

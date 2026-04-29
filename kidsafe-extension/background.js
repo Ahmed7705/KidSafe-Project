@@ -153,8 +153,15 @@ async function blockSpecificSites(sites) {
       return;
     }
 
-    const newRules = sites.map((site, index) => {
-      const blockedUrl = chrome.runtime.getURL(`/blocked.html?reason=${encodeURIComponent("Site time limit reached for " + site)}`);
+    const newRules = sites.map((siteObj, index) => {
+      const site = typeof siteObj === 'string' ? siteObj : siteObj.hostname;
+      const startedAt = siteObj.first_activity_at ? new Date(siteObj.first_activity_at).getTime() : "";
+      const blockedAt = siteObj.last_activity_at ? new Date(siteObj.last_activity_at).getTime() : "";
+      
+      let blockedUrl = chrome.runtime.getURL(`/blocked.html?reason=${encodeURIComponent("Site time limit reached for " + site)}`);
+      if (startedAt && blockedAt) {
+          blockedUrl += `&startedAt=${startedAt}&blockedAt=${blockedAt}`;
+      }
       return {
         id: 100000 + index,
         priority: 9,
@@ -174,10 +181,16 @@ async function blockSpecificSites(sites) {
         if (!tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("chrome-extension://")) continue;
         try {
           const tabHostname = new URL(tab.url).hostname;
-          for (const site of sites) {
+          for (const siteObj of sites) {
+            const site = typeof siteObj === 'string' ? siteObj : siteObj.hostname;
+            const startedAt = siteObj.first_activity_at ? new Date(siteObj.first_activity_at).getTime() : "";
+            const blockedAt = siteObj.last_activity_at ? new Date(siteObj.last_activity_at).getTime() : "";
             // Match exactly or as a subdomain (e.g. www.instagram.com matches instagram.com)
             if (tabHostname === site || tabHostname.endsWith("." + site)) {
-              const blockedUrl = chrome.runtime.getURL(`/blocked.html?reason=${encodeURIComponent("Site time limit reached for " + site)}`);
+              let blockedUrl = chrome.runtime.getURL(`/blocked.html?reason=${encodeURIComponent("Site time limit reached for " + site)}`);
+              if (startedAt && blockedAt) {
+                  blockedUrl += `&startedAt=${startedAt}&blockedAt=${blockedAt}`;
+              }
               chrome.tabs.update(tab.id, { url: blockedUrl });
               break;
             }
@@ -282,7 +295,6 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "kidsafe-sync") {
     updateRules();
-    sendHeartbeat();
   }
   if (alarm.name === "kidsafe-heartbeat") {
     sendHeartbeat();
